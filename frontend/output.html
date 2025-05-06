@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bike Recommender & Price Predictor Results</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background-color: salmon;
+      overflow-x: hidden;
+    }
+
+    .header, .price-prediction {
+      background: #ffd1df;
+      width: 100%;
+      padding: 20px;
+      box-sizing: border-box;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .header button {
+      margin-top: 10px;
+    }
+
+    .input-boxes {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: nowrap;
+      width: 100%;
+      margin-top: 10px;
+    }
+    .input-box {
+      flex: 1 1 15%;
+      background-color: white;
+      color: black;
+      padding: 10px;
+      border-radius: 6px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .recommendations {
+      padding: 0 20px;
+      margin-bottom: 20px;
+    }
+
+    .recommendations-title {
+      background: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      display: inline-block;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .bike-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .bike-item {
+      flex: 1;
+      background: #fff;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .bike-item h4 {
+      margin: 5px 0;
+    }
+
+    .price-prediction {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 500px;
+    }
+
+    .close-btn {
+      float: right;
+      font-size: 24px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header Section -->
+  <div class="header">
+    <h2>Entered Values</h2>
+    <div id="userInputsDisplay" class="input-boxes"></div>
+    <button onclick="goBack()">Edit Inputs</button>
+  </div>
+
+  <!-- Recommendations Section -->
+  <div class="recommendations">
+    <h3 class="recommendations-title">Top 10 Recommended Bikes:</h3>
+    <div id="bikeRows"></div>
+  </div>
+
+  <!-- Price Prediction Section -->
+  <div class="price-prediction">
+    <h3>Predicted Price:</h3>
+    <p id="pricePrediction" style="font-weight: bold;"></p>
+  </div>
+
+  <!-- Modal for Full Specs -->
+  <div id="bikeModal" class="modal">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeModal()">&times;</span>
+      <h3>Bike Details</h3>
+      <div id="bikeDetailsContainer"></div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const inputs = JSON.parse(localStorage.getItem('userInputs') || '{}');
+      const recs   = JSON.parse(localStorage.getItem('recommendedBikes') || '[]');
+      const price  = parseFloat(localStorage.getItem('predictedPrice') || '0');
+
+      // Render user inputs in box format
+      const ui = document.getElementById('userInputsDisplay');
+      const fields = [
+        { label: 'Displacement', value: `${inputs.displacement_cc} cc` },
+        { label: 'Power', value: `${inputs.power_bhp} BHP` },
+        { label: 'Weight', value: `${inputs.weight_kg} kg` },
+        { label: 'Mileage', value: `${inputs.mileage} km/l` },
+        { label: 'Top Speed', value: `${inputs.top_speed} km/h` },
+        { label: 'Star Rating', value: inputs.star_rating }
+      ];
+
+      fields.forEach(field => {
+        const div = document.createElement('div');
+        div.className = 'input-box';
+        div.innerHTML = `<strong>${field.label}</strong><br/>${field.value}`;
+        ui.appendChild(div);
+      });
+
+      // Render recommendations in 3 rows
+      const container = document.getElementById('bikeRows');
+      const rows = [[0,3], [3,6], [6,10]];
+      rows.forEach(range => {
+        const row = document.createElement('div');
+        row.className = 'bike-row';
+        recs.slice(range[0], range[1]).forEach((bike, idx) => {
+          const card = document.createElement('div');
+          card.className = 'bike-item';
+          const num = range[0] + idx + 1;
+          card.innerHTML = `
+            <h4>#${num} ${bike.bike_name}</h4>
+            <p>Score: ${bike.score.toFixed(2)}</p>
+          `;
+          card.addEventListener('click', () => showBikeDetails(bike));
+          row.appendChild(card);
+        });
+        container.appendChild(row);
+      });
+
+      // Render predicted price
+      document.getElementById('pricePrediction').textContent =
+        `₹ ${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    });
+
+    function goBack() {
+      window.location.href = 'index.html';
+    }
+
+    function showBikeDetails(bike) {
+      const container = document.getElementById('bikeDetailsContainer');
+      container.innerHTML = `
+        <ul>
+          <li><strong>Brand:</strong> ${bike.brand}</li>
+          <li><strong>Bike Name:</strong> ${bike.bike_name}</li>
+          <li><strong>Displacement:</strong> ${bike.displacement_cc} cc</li>
+          <li><strong>Power:</strong> ${bike.power_bhp} BHP</li>
+          <li><strong>Weight:</strong> ${bike.weight_kg} kg</li>
+          <li><strong>Mileage:</strong> ${bike.mileage} km/l</li>
+          <li><strong>Top Speed:</strong> ${bike.top_speed} km/h</li>
+          <li><strong>Star Rating:</strong> ${bike.star_rating}</li>
+          <li><strong>Price:</strong> ₹ ${bike.price.toLocaleString()}</li>
+        </ul>
+      `;
+      document.getElementById('bikeModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('bikeModal').style.display = 'none';
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeModal();
+    });
+  </script>
+</body>
+</html>

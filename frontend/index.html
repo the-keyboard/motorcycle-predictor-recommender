@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bike Recommender & Price Predictor</title>
+  <link rel="stylesheet" href='style.css'>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <h2>Bike Recommender & Price Predictor</h2>
+  
+  <form id="bikeForm">
+    <label for="displacement">Displacement (cc):</label>
+    <input type="number" id="displacement" required />
+    <label for="power">Power (BHP):</label>
+    <input type="number" id="power" required />
+    <label for="weight">Weight (kg):</label>
+    <input type="number" id="weight" required />
+    <label for="mileage">Mileage:</label>
+    <input type="number" id="mileage" required />
+    <label for="topSpeed">Top Speed (km/h):</label>
+    <input type="number" id="topSpeed" required />
+    <label for="rating">Star Rating:</label>
+    <input type="number" step="0.1" id="rating" required />
+    <button type="button" onclick="getResults()">Get Recommendations & Price Prediction</button>
+  </form>
+
+  <div class="result" id="recommendationResult"></div>
+  <div class="result" id="pricePredictionResult"></div>
+  <canvas id="bikeChart" width="400" height="200"></canvas>
+
+  <!-- Modal for full specs -->
+  <div id="bikeModal" class="modal">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeModal()">&times;</span>
+      <h3>Bike Details</h3>
+      <div id="bikeDetailsContainer"></div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
